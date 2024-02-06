@@ -7,7 +7,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
 import shop.mtcoding.blog.user.User;
 
 import java.util.List;
@@ -19,11 +18,32 @@ public class BoardController {
     private final HttpSession session;
     private final BoardRepository boardRepository;
 
+    @PostMapping("/board/{id}/delete")
+    public String delete(@PathVariable int id, HttpServletRequest request) {
+        // 1. 인증 안되면 나가
+        User sessionUser = (User) session.getAttribute("sessionUser");
+        if (sessionUser == null) { //401
+            return "redirect:/loginForm";
+        }
+
+        // 2. 권한 없으면 나가
+        Board board = boardRepository.findById(id);
+        if (board.getUserId() != sessionUser.getId()) {
+            request.setAttribute("status", 403);
+            request.setAttribute("mag", "게시글을 삭제할 권한이 없습니다.");
+            return "error/40x";
+        }
+
+        boardRepository.deleteById(id);
+
+        return "redirect:/";
+    }
+
     @PostMapping("/board/save")
     public String save(BoardRequest.SaveDTO requestDTO, HttpServletRequest request) {
         // 1. 인증 체크
         User sessionUser = (User) session.getAttribute("sessionUser");
-        if (sessionUser == null){
+        if (sessionUser == null) {
             return "redirect:/loginForm";
         }
         // 2. 바디 데이터 확인 및 유효성 검사
@@ -31,7 +51,7 @@ public class BoardController {
 
         if (requestDTO.getTitle().length() > 30) {
             request.setAttribute("status", 400);
-            request.setAttribute("msg","title의 길이가 30자를 초과해서는 안되요.");
+            request.setAttribute("msg", "title의 길이가 30자를 초과해서는 안되요.");
             return "error/40x"; // BadRequest
         }
 
@@ -67,7 +87,7 @@ public class BoardController {
     @GetMapping("/board/{id}")
     public String detail(@PathVariable int id, HttpServletRequest request) {
         // 1. 모델 진입 - 상세보기 데이터 가져오기
-        BoardResponse.DetailDTO responseDTO = boardRepository.findById(id);
+        BoardResponse.DetailDTO responseDTO = boardRepository.findByWithUser(id);
 
         // 2. 페이지 주인 여부 체크(board의 userId와 sessionUser의 id를 비교)
         boolean pageOwner = false;
