@@ -26,7 +26,7 @@ public class BoardController {
         if (sessionUser == null){
             return "redirect:/loginForm";
         }
-        // 2. 바디 데잉터 확인 및 유효성 검사
+        // 2. 바디 데이터 확인 및 유효성 검사
         System.out.println(requestDTO);
 
         if (requestDTO.getTitle().length() > 30) {
@@ -66,12 +66,22 @@ public class BoardController {
 
     @GetMapping("/board/{id}")
     public String detail(@PathVariable int id, HttpServletRequest request) {
-        System.out.println("id : " + id);
-
-        // 바디 데이터가 없으면 유효성 검사가 필요없지 ㅎ
+        // 1. 모델 진입 - 상세보기 데이터 가져오기
         BoardResponse.DetailDTO responseDTO = boardRepository.findById(id);
 
+        // 2. 페이지 주인 여부 체크(board의 userId와 sessionUser의 id를 비교)
+        boolean pageOwner = false;
+
+        User sessionUser = (User) session.getAttribute("sessionUser");
+
+        if (sessionUser != null) {
+            if (sessionUser.getId() == responseDTO.getUserId()) {
+                pageOwner = true;
+            }
+        }
+
         request.setAttribute("board", responseDTO);
+        request.setAttribute("pageOwner", pageOwner);
         return "board/detail";
     }
 }
