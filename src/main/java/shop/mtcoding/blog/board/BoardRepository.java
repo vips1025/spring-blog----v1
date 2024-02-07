@@ -26,7 +26,7 @@ public class BoardRepository {
         return board;
     }
 
-    public BoardResponse.DetailDTO findByWithUser(int idx) {
+    public BoardResponse.DetailDTO findByIdWithUser(int idx) {
         Query query = em.createNativeQuery("select b.id, b.title, b.content, b.user_id, u.username from board_tb b inner join user_tb u on b.user_id = u.id where b.id = ?");
         query.setParameter(1, idx);
 
@@ -68,6 +68,16 @@ public class BoardRepository {
     public void deleteById(int id) {
         Query query = em.createNativeQuery("delete from board_tb where id = ?");
         query.setParameter(1, id);
+        query.executeUpdate();
+    }
+
+    @Transactional
+    public void update(BoardRequest.UpdateDTO requestDTO, int id) {
+        Query query = em.createNativeQuery("update board_tb set title = ?, content = ? where id = ?");
+        query.setParameter(1, requestDTO.getTitle());
+        query.setParameter(2, requestDTO.getContent());
+        query.setParameter(3, id);
+
         query.executeUpdate();
     }
 }

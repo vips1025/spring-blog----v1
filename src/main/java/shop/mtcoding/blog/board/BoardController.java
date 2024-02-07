@@ -7,6 +7,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import shop.mtcoding.blog.user.User;
 
 import java.util.List;
@@ -17,6 +18,50 @@ public class BoardController {
 
     private final HttpSession session;
     private final BoardRepository boardRepository;
+
+    @PostMapping("/board/{id}/update")
+    public String update(@PathVariable int id, BoardRequest.UpdateDTO requestDTO) {
+        System.out.println(requestDTO);
+        // 1. 인증 체크
+        User sessionUser = (User) session.getAttribute("sessionUser");
+        if (sessionUser == null) { //401
+            return "redirect:/loginForm";
+        }
+
+        // 2. 권한체크
+        Board board = boardRepository.findById(id);
+        if(board.getUserId() != sessionUser.getId()){
+            return "error/403";
+        }
+
+        // 3. 핵심 로직
+        // update board_tb set title = ?, content = ? where = ?;
+        boardRepository.update(requestDTO, id);
+
+        return "redirect:/board/" + id;
+    }
+
+    @GetMapping("/board/{id}/updateForm")
+    public String updateForm(@PathVariable int id, HttpServletRequest request) {
+        // 인증 체크
+        User sessionUser = (User) session.getAttribute("sessionUser");
+        if (sessionUser == null) { //401
+            return "redirect:/loginForm";
+        }
+
+        // 권한 체크
+        // 모델 위임 (id로 board를 조회)
+        Board board = boardRepository.findById(id);
+        if (board.getUserId() != sessionUser.getId()) {
+            return "error/403";
+        }
+
+        // 3. 가방에 담기
+        request.setAttribute("board", board);
+
+
+        return "board/updateForm";
+    }
 
     @PostMapping("/board/{id}/delete")
     public String delete(@PathVariable int id, HttpServletRequest request) {
@@ -87,7 +132,7 @@ public class BoardController {
     @GetMapping("/board/{id}")
     public String detail(@PathVariable int id, HttpServletRequest request) {
         // 1. 모델 진입 - 상세보기 데이터 가져오기
-        BoardResponse.DetailDTO responseDTO = boardRepository.findByWithUser(id);
+        BoardResponse.DetailDTO responseDTO = boardRepository.findByIdWithUser(id);
 
         // 2. 페이지 주인 여부 체크(board의 userId와 sessionUser의 id를 비교)
         boolean pageOwner = false;
