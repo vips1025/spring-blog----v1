@@ -20,6 +20,15 @@ public class BoardController {
     private final HttpSession session;
     private final BoardRepository boardRepository;
 
+    @GetMapping("/board/{id}/updateForm")
+    public String updateForm(@PathVariable int id, HttpServletRequest request){
+        Board board = boardRepository.findById(id);
+        request.setAttribute("board", board);
+
+        return "board/updateForm";
+    }
+
+
     @PostMapping("/board/{id}/delete")
     public String delete(@PathVariable int id, HttpServletRequest request) {
         // 1. 인증 안되면 나가
