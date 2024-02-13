@@ -3,11 +3,12 @@ package shop.mtcoding.blog.board;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import shop.mtcoding.blog._core.config.security.MyLoginUser;
 import shop.mtcoding.blog.user.User;
 
 import java.util.List;
@@ -20,17 +21,12 @@ public class BoardController {
     private final BoardRepository boardRepository;
 
     @PostMapping("/board/{id}/update")
-    public String update(@PathVariable int id, BoardRequest.UpdateDTO requestDTO) {
+    public String update(@PathVariable int id, BoardRequest.UpdateDTO requestDTO, @AuthenticationPrincipal MyLoginUser myLoginUser) {
         System.out.println(requestDTO);
-        // 1. 인증 체크
-        User sessionUser = (User) session.getAttribute("sessionUser");
-        if (sessionUser == null) { //401
-            return "redirect:/loginForm";
-        }
 
         // 2. 권한체크
         Board board = boardRepository.findById(id);
-        if(board.getUserId() != sessionUser.getId()){
+        if (board.getUserId() != myLoginUser.getUser().getId()) {
             return "error/403";
         }
 
@@ -42,38 +38,27 @@ public class BoardController {
     }
 
     @GetMapping("/board/{id}/updateForm")
-    public String updateForm(@PathVariable int id, HttpServletRequest request) {
-        // 인증 체크
-        User sessionUser = (User) session.getAttribute("sessionUser");
-        if (sessionUser == null) { //401
-            return "redirect:/loginForm";
-        }
+    public String updateForm(@PathVariable int id, HttpServletRequest request, @AuthenticationPrincipal MyLoginUser myLoginUser) {
 
         // 권한 체크
         // 모델 위임 (id로 board를 조회)
         Board board = boardRepository.findById(id);
-        if (board.getUserId() != sessionUser.getId()) {
+        if (board.getUserId() != myLoginUser.getUser().getId()) {
             return "error/403";
         }
 
         // 3. 가방에 담기
         request.setAttribute("board", board);
 
-
         return "board/updateForm";
     }
 
     @PostMapping("/board/{id}/delete")
-    public String delete(@PathVariable int id, HttpServletRequest request) {
-        // 1. 인증 안되면 나가
-        User sessionUser = (User) session.getAttribute("sessionUser");
-        if (sessionUser == null) { //401
-            return "redirect:/loginForm";
-        }
+    public String delete(@PathVariable int id, HttpServletRequest request, @AuthenticationPrincipal MyLoginUser myLoginUser) {
 
         // 2. 권한 없으면 나가
         Board board = boardRepository.findById(id);
-        if (board.getUserId() != sessionUser.getId()) {
+        if (board.getUserId() != myLoginUser.getUser().getId()) {
             request.setAttribute("status", 403);
             request.setAttribute("mag", "게시글을 삭제할 권한이 없습니다.");
             return "error/40x";
@@ -85,12 +70,8 @@ public class BoardController {
     }
 
     @PostMapping("/board/save")
-    public String save(BoardRequest.SaveDTO requestDTO, HttpServletRequest request) {
-        // 1. 인증 체크
-        User sessionUser = (User) session.getAttribute("sessionUser");
-        if (sessionUser == null) {
-            return "redirect:/loginForm";
-        }
+    public String save(BoardRequest.SaveDTO requestDTO, HttpServletRequest request, @AuthenticationPrincipal MyLoginUser myLoginUser) {
+
         // 2. 바디 데이터 확인 및 유효성 검사
         System.out.println(requestDTO);
 
@@ -102,14 +83,13 @@ public class BoardController {
 
         // 모델 위임
         // insert into board_tb(title, content, user_id) values(?, ?, ?, now());
-        boardRepository.save(requestDTO, sessionUser.getId());
+        boardRepository.save(requestDTO, myLoginUser.getUser().getId());
 
         return "redirect:/";
     }
 
-    @GetMapping({"/", "/board"})
+    @GetMapping({"/"})
     public String index(HttpServletRequest request) {
-
         List<Board> boardList = boardRepository.findAll();
         request.setAttribute("boardList", boardList);
 
@@ -118,29 +98,19 @@ public class BoardController {
 
     @GetMapping("/board/saveForm")
     public String saveForm() {
-        // session 영역에 sessionUser 키값에 user 객체 있는지 체크
-        User sessionUser = (User) session.getAttribute("sessionUser");
-
-        // 값이 null 이면 로그인 페이지로 리다이렉션
-        // 값이 null 이 아니면, /board/saveForm 으로 이동
-        if (sessionUser == null) {
-            return "redirect:/loginForm";
-        }
         return "board/saveForm";
     }
 
     @GetMapping("/board/{id}")
-    public String detail(@PathVariable int id, HttpServletRequest request) {
+    public String detail(@PathVariable int id, HttpServletRequest request, @AuthenticationPrincipal MyLoginUser myLoginUser) {
         // 1. 모델 진입 - 상세보기 데이터 가져오기
         BoardResponse.DetailDTO responseDTO = boardRepository.findByIdWithUser(id);
 
         // 2. 페이지 주인 여부 체크(board의 userId와 sessionUser의 id를 비교)
         boolean pageOwner = false;
 
-        User sessionUser = (User) session.getAttribute("sessionUser");
-
-        if (sessionUser != null) {
-            if (sessionUser.getId() == responseDTO.getUserId()) {
+        if (myLoginUser != null) {
+            if (myLoginUser.getUser().getId() == responseDTO.getUserId()) {
                 pageOwner = true;
             }
         }
