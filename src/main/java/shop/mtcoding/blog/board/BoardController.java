@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+import shop.mtcoding.blog.reply.ReplyRepository;
 import shop.mtcoding.blog.user.User;
 
 import java.util.HashMap;
@@ -16,6 +17,7 @@ public class BoardController {
 
     private final HttpSession session;
     private final BoardRepository boardRepository;
+    private final ReplyRepository replyRepository;
 
     // ?title=제목1&content=내용1
     // title=제목1&content=내용1
@@ -143,9 +145,10 @@ public class BoardController {
         BoardResponse.DetailDTO boardDTO = boardRepository.findByIdWithUser(id);
         boardDTO.isBoardOwner(sessionUser);
 
-
+        List<BoardResponse.ReplyDTO> replyDTOList = replyRepository.findByBoardId(id);
 
         request.setAttribute("board", boardDTO);
+        request.setAttribute("replyList", replyDTOList);
 
         return "board/detail";
     }

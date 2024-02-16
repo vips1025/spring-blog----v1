@@ -2,6 +2,7 @@ package shop.mtcoding.blog.board;
 
 import jakarta.servlet.http.HttpSession;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import shop.mtcoding.blog.user.User;
 
 import java.util.List;
@@ -23,6 +24,7 @@ public class BoardResponse {
         }
     }
 
+    @NoArgsConstructor
     @Data
     public static class ReplyDTO {
         private Integer id;
