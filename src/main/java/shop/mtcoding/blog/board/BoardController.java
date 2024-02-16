@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import shop.mtcoding.blog.reply.ReplyRepository;
 import shop.mtcoding.blog.user.User;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
@@ -145,7 +146,7 @@ public class BoardController {
         BoardResponse.DetailDTO boardDTO = boardRepository.findByIdWithUser(id);
         boardDTO.isBoardOwner(sessionUser);
 
-        List<BoardResponse.ReplyDTO> replyDTOList = replyRepository.findByBoardId(id);
+        List<BoardResponse.ReplyDTO> replyDTOList = replyRepository.findByBoardId(id, sessionUser);
 
         request.setAttribute("board", boardDTO);
         request.setAttribute("replyList", replyDTOList);
