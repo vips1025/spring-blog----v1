@@ -2,18 +2,20 @@ package shop.mtcoding.blog.reply;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 
+@Table(name="reply_tb")
 @Data
 @Entity
-@Table(name = "reply_tb")
 public class Reply {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private Integer id;
+
     private String comment;
-    private int userId;
-    private int boardId;
+    private Integer userId;
+    private Integer boardId;
     private LocalDateTime createdAt;
 }
